@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -58,6 +60,11 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         return authenticationService.logout();
+    }
+
+    @GetMapping("/getonlineusers")
+    public ResponseEntity<Map<String, Object>> getOnlineUsers() {
+        return ResponseEntity.ok(authenticationService.getOnlineUsers());
     }
 
     // ---------------------- GET CURRENT USER ------------------------

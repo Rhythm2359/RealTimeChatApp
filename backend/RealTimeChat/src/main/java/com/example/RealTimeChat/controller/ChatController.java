@@ -25,102 +25,94 @@ public class ChatController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    //ADD USER (JOIN CHAT)
     @MessageMapping("/chat.addUser")
     @SendTo("/topic/public")
-    public ChatMessage addUser(@Payload ChatMessage chatMessage,
-                               SimpMessageHeaderAccessor headerAccessor) {
+    public ChatMessage addUser(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
 
-        if (userService.userExists(chatMessage.getSender())) {
+        if(userService.userExists(chatMessage.getSender())){
 
-            // store username in WebSocket session
+            //store username in session
             headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
-
-            // mark user as online
             userService.setUserOnlineStatus(chatMessage.getSender(), true);
 
-            System.out.println("User added Successfully " +
-                    chatMessage.getSender() + " with session ID " +
-                    headerAccessor.getSessionId());
+            System.out.println("User added Successfully "+ chatMessage.getSender()+ " with session ID "
+                    +headerAccessor.getSessionId());
 
-            // timestamp
-            chatMessage.setTimeStamp(LocalDateTime.now());
-
-            if (chatMessage.getContent() == null)
+            chatMessage.setTimestamp(LocalDateTime.now());
+            if(chatMessage.getContent()==null){
                 chatMessage.setContent("");
-
-            // save join message
+            }
             return chatMessageRepository.save(chatMessage);
         }
-
         return null;
     }
 
-
-    // SEND PUBLIC MESSAGE
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
     public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
 
-        if (userService.userExists(chatMessage.getSender())) {
+        if(userService.userExists(chatMessage.getSender())){
+            if(chatMessage.getTimestamp()==null){
+                chatMessage.setTimestamp(LocalDateTime.now());
+            }
 
-            if (chatMessage.getTimeStamp() == null)
-                chatMessage.setTimeStamp(LocalDateTime.now());
-
-            if (chatMessage.getContent() == null)
+            if(chatMessage.getContent()==null){
                 chatMessage.setContent("");
+            }
 
             return chatMessageRepository.save(chatMessage);
         }
-
         return null;
     }
 
-
-    // SEND PRIVATE MESSAGE
     @MessageMapping("/chat.sendPrivateMessage")
-    public void sendPrivateMessage(@Payload ChatMessage chatMessage,
-                                   SimpMessageHeaderAccessor headerAccessor) {
+    public void sendPrivateMessage(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
 
-        if (userService.userExists(chatMessage.getSender()) &&
-                userService.userExists(chatMessage.getRecepient())) {
+        if(userService.userExists(chatMessage.getSender()) && userService.userExists(chatMessage.getRecipient())){
 
-            if (chatMessage.getTimeStamp() == null)
-                chatMessage.setTimeStamp(LocalDateTime.now());
+            if(chatMessage.getTimestamp()==null){
+                chatMessage.setTimestamp(LocalDateTime.now());
+            }
 
-            if (chatMessage.getContent() == null)
+            if(chatMessage.getContent()==null){
                 chatMessage.setContent("");
+            }
 
             chatMessage.setType(ChatMessage.MessageType.PRIVATE_MESSAGE);
 
-            // save message in DB
             ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
-            System.out.println("Message saved successfully with Id " + savedMessage.getId());
+            System.out.println("Message saved successfully with Id "+savedMessage.getId());
+
 
             try {
-                // destination for RECEIVER
-                String recepientDestination =
-                        "/user/" + chatMessage.getRecepient() + "/queue/private";
-
-                System.out.println("Sending message to recipient destination "
-                        + recepientDestination);
-
+                String recepientDestination = "/user/" + chatMessage.getRecipient() + "/queue/private";
+                System.out.println("Sending message to recepient destination " + recepientDestination);
                 messagingTemplate.convertAndSend(recepientDestination, savedMessage);
 
-
-                // destination for SENDER (to update sender’s chat instantly)
-                String senderDestination =
-                        "/user/" + chatMessage.getSender() + "/queue/private";
-
-                System.out.println("Sending message to sender destination "
-                        + senderDestination);
-
+                String senderDestination = "/user/" + chatMessage.getSender() + "/queue/private";
+                System.out.println("Sending message to sender destination " + senderDestination);
                 messagingTemplate.convertAndSend(senderDestination, savedMessage);
-
-            } catch (Exception e) {
-                System.out.println("ERROR occurred while sending the message " + e.getMessage());
+            }
+            catch (Exception e) {
+                System.out.println("ERROR occured while sending the message " + e.getMessage());
                 e.printStackTrace();
             }
         }
+        else{
+            System.out.println("ERROR: Sender "+chatMessage.getSender()+" or recepient "+chatMessage.getRecipient()+" does not exist");
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

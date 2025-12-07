@@ -25,25 +25,25 @@ import java.util.stream.Collectors;
 public class AuthenticationService {
 
     @Autowired
-    private UserRepository userRepository ;
+    private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private AuthenticationManager authenticationManager ;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtService jwtService ;
+    private JwtService jwtService;
 
-    public UserDTO signup(RegisterRequestDTO registerRequestDTO) {
+    public UserDTO signup(RegisterRequestDTO  registerRequestDTO) {
         if(userRepository.findByUsername(registerRequestDTO.getUsername()).isPresent()){
             throw new RuntimeException("Username is already in use");
         }
 
         User user = new User();
         user.setUsername(registerRequestDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(registerRequestDTO.getPassword()));
+        user.setPassword(passwordEncoder.encode((registerRequestDTO.getPassword())));
         user.setEmail(registerRequestDTO.getEmail());
 
         User savedUser = userRepository.save(user);
@@ -51,6 +51,7 @@ public class AuthenticationService {
     }
 
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
+
         User user = userRepository.findByUsername(loginRequestDTO.getUsername())
                 .orElseThrow(() -> new RuntimeException("Username not found"));
 
@@ -64,7 +65,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<String> logout(){
 
         ResponseCookie responseCookie = ResponseCookie.from("JWT", "")
                 .httpOnly(true)
@@ -74,29 +75,22 @@ public class AuthenticationService {
                 .sameSite("Strict")
                 .build();
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, responseCookie.toString())
                 .body("Logged out successfully");
     }
 
-    public Map<String, Object> getOnlineUsers() {
-
+    public Map<String , Object> getOnlineUsers(){
         List<User> usersList = userRepository.findByIsOnlineTrue();
-
-        Map<String, Object> onlineUsers = usersList.stream()
-                .collect(Collectors.toMap(User::getUsername, user -> user));
-
+        Map<String , Object> onlineUsers = usersList.stream().collect(Collectors.toMap(User::getUsername, user -> user));
         return onlineUsers;
     }
 
-
-    public UserDTO convertToUserDTO(User user) {
+    public UserDTO convertToUserDTO(User user){
         UserDTO userDTO = new UserDTO();
         userDTO.setEmail(user.getEmail());
         userDTO.setUsername(user.getUsername());
-        userDTO.setEmail(user.getEmail());
+        userDTO.setId(user.getId());
 
         return userDTO;
     }
-
 }

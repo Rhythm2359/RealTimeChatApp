@@ -18,18 +18,17 @@ import java.io.IOException;
 import java.util.Collections;
 
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
-    // ... Autowired fields for JwtService and UserRepository ...
-    @Autowired
-    private  UserRepository userRepository ;
 
     @Autowired
-    private JwtService jwtService ;
+    private JwtService jwtService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         Long userId = null;
         String jwtToken = null;
@@ -40,12 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtToken = authHeader.substring(7);
         }
 
-        // //If JWT token is null, need to check cookie
-        if (jwtToken == null) {
-            Cookie[] cookies = request.getCookies();
-            if (cookies != null) {
+
+        //If JWT token is null, need to check cookie
+        if(jwtToken == null){
+            Cookie []  cookies = request.getCookies();
+            if(cookies != null){
                 for (Cookie cookie : cookies) {
-                    if ("JWT".equals(cookie.getName())) {
+                    if("JWT".equals(cookie.getName())){
                         jwtToken = cookie.getValue();
                         break;
                     }
@@ -53,19 +53,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (jwtToken == null) {
-            filterChain.doFilter(request, response);
+        if(jwtToken == null){
+            filterChain.doFilter(request,response);
             return;
         }
 
-        // --- Logic from image_604f42.jpg ---
         userId = jwtService.extractUserId(jwtToken);
 
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if(userId != null && SecurityContextHolder.getContext().getAuthentication() == null){
 
             var userDetails = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-            if (jwtService.isTokenValid(jwtToken, userDetails)) {
+            if(jwtService.isTokenValid(jwtToken, userDetails)){
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, Collections.emptyList());
@@ -74,8 +73,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+
         }
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(request,response);
+        return;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+

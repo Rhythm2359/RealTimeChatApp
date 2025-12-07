@@ -22,6 +22,6 @@ public class User {
     private String password;
 
     @Column(nullable = false , name="is_online")
-    private boolean online ;
+    private boolean isOnline ;
 
 }
